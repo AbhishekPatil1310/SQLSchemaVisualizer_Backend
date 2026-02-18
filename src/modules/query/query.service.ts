@@ -37,17 +37,29 @@ export const executeQuery = async (
   const client = await pool.connect();
   
   try {
-    const result = await client.query(sql);
+    const rawResult = await client.query(sql);
+    const results = Array.isArray(rawResult) ? rawResult : [rawResult];
+    const tabularResult = [...results]
+      .reverse()
+      .find((r: any) => Array.isArray(r?.fields) && r.fields.length > 0);
+    const totalRowCount = results.reduce((sum: number, r: any) => {
+      return sum + (typeof r?.rowCount === 'number' ? r.rowCount : 0);
+    }, 0);
+
     if (format === 'json') {
-      return { type: 'json', rows: result.rows, rowCount: result.rowCount ?? 0 };
+      return {
+        type: 'json',
+        rows: Array.isArray(tabularResult?.rows) ? tabularResult.rows : [],
+        rowCount: tabularResult?.rowCount ?? totalRowCount
+      };
     }
 
-    const hasFields = result.fields && result.fields.length > 0;
+    const hasFields = !!tabularResult;
     return {
       type: 'table',
-      columns: hasFields ? result.fields.map((f: DbField) => f.name) : ['Status'], 
-      rows: hasFields ? result.rows : [{ Status: 'Success', ...result.rows[0] }],
-      rowCount: result.rowCount ?? 0
+      columns: hasFields ? tabularResult.fields.map((f: DbField) => f.name) : ['Status'], 
+      rows: hasFields ? tabularResult.rows : [{ Status: 'Success' }],
+      rowCount: hasFields ? (tabularResult.rowCount ?? 0) : totalRowCount
     };
   } catch (error: any) {
     throw error;
