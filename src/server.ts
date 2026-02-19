@@ -6,6 +6,8 @@ import authRoutes from './modules/auth/auth.routes.js';
 import workspaceRoutes from './modules/workspace/workspace.routes.js';
 import queryRoutes from './modules/query/query.routes.js';
 import helmet from 'helmet'; // Recommended for production security
+import rateLimit from 'express-rate-limit';
+import aiRoutes from './modules/ai/ai.routes.js';
 
 const app = express();
 
@@ -23,10 +25,23 @@ app.use(cors({
 
 app.use(express.json());
 
+const aiLimiter = rateLimit({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: env.RATE_LIMIT_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Too many requests',
+    details: 'AI request rate limit exceeded. Please try again later.'
+  }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/workspace', workspaceRoutes);
 app.use('/api/query', queryRoutes);
+app.use('/api/ai', aiLimiter, aiRoutes);
 
 // Error middleware MUST be the last one added
 app.use(errorMiddleware);
