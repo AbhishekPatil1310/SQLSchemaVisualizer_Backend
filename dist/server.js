@@ -11,7 +11,7 @@ import aiRoutes from './modules/ai/ai.routes.js';
 const app = express();
 app.use(helmet());
 app.use(cors({
-    origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://sql-schema-visualizer-frontend-28ta.vercel.appa',
+    origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://sql-schema-visualizer-frontend-28ta.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
