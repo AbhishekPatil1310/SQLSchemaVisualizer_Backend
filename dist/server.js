@@ -8,6 +8,7 @@ import queryRoutes from './modules/query/query.routes.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import aiRoutes from './modules/ai/ai.routes.js';
+import notesRoutes from './modules/notes/notes.routes.js';
 const app = express();
 app.use(helmet());
 const DeployOrigin = [
@@ -38,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workspace', workspaceRoutes);
 app.use('/api/query', queryRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/notes', notesRoutes);
 app.use(errorMiddleware);
 app.listen(env.PORT, () => {
     console.log(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);

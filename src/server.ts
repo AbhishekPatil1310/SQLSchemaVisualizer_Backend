@@ -8,6 +8,7 @@ import queryRoutes from './modules/query/query.routes.js';
 import helmet from 'helmet'; // Recommended for production security
 import rateLimit from 'express-rate-limit';
 import aiRoutes from './modules/ai/ai.routes.js';
+import notesRoutes from './modules/notes/notes.routes.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workspace', workspaceRoutes);
 app.use('/api/query', queryRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
+app.use('/api/notes', notesRoutes);
 
 // Error middleware MUST be the last one added
 app.use(errorMiddleware);
