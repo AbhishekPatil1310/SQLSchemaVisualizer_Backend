@@ -14,10 +14,17 @@ const app = express();
 // 1. Security Headers (Optional but recommended)
 app.use(helmet());
 
+const DeployOrigin = [
+  'http://localhost:5173',
+  'http://localhost:5173',
+  'https://sql-schema-visualizer-frontend-28ta.vercel.app',
+  'https://sql-schema-visualizer-frontend.vercel.app'
+];
+
 // 2. CORS Configuration
 app.use(cors({
   // In production, this should be your frontend URL (e.g., http://localhost:5173 or https://your-app.com)
-  origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://sql-schema-visualizer-frontend-28ta.vercel.app',
+  origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : DeployOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true // Required if you decide to use HttpOnly cookies later

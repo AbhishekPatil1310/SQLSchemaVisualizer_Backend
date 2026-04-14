@@ -100,3 +100,57 @@ export const switchConnection = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: "Failed to switch workspace", details: error.message });
   }
 };
+
+export const deleteConnection = async (req: AuthRequest, res: Response) => {
+  try {
+    const { connectionId } = req.params;
+    const userId = req.user?.userId;
+
+    if (!userId || !connectionId) {
+      return res.status(400).json({ error: "User ID or Connection ID missing" });
+    }
+
+    // 1. Check if the connection exists and belongs to the user
+    const checkRes = await queryMetadata(
+      'SELECT is_active FROM user_connections WHERE id = $1 AND user_id = $2',
+      [connectionId, userId]
+    );
+
+    if (checkRes.rowCount === 0) {
+      return res.status(404).json({ error: "Connection not found or access denied" });
+    }
+
+    const wasActive = checkRes.rows[0].is_active;
+
+    // 2. Delete the connection
+    await queryMetadata(
+      'DELETE FROM user_connections WHERE id = $1 AND user_id = $2',
+      [connectionId, userId]
+    );
+
+    // 3. If it was the active connection, make another one active
+    if (wasActive) {
+      // Close the pool from memory
+      await poolManager.closePool(userId);
+
+      // Get the most recent connection
+      const remainingRes = await queryMetadata(
+        'SELECT id FROM user_connections WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [userId]
+      );
+
+      // If there are remaining connections, make the most recent one active
+      if (remainingRes.rowCount > 0) {
+        await queryMetadata(
+          'UPDATE user_connections SET is_active = true WHERE id = $1',
+          [remainingRes.rows[0].id]
+        );
+      }
+    }
+
+    res.json({ message: "Connection deleted successfully." });
+  } catch (error: any) {
+    console.error("Delete Connection Error:", error);
+    res.status(500).json({ error: "Failed to delete connection", details: error.message });
+  }
+};
