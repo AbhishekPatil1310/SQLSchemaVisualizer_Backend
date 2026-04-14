@@ -1,5 +1,6 @@
 import { executeQuery, getDatabaseSchema } from './query.service.js';
 import { getActiveConnectionForUser } from '../workspace/workspace.service.js';
+import { mapDatabaseError } from '../../core/database-error.js';
 export const runUserQuery = async (req, res) => {
     try {
         const { sql, format = 'table' } = req.body;
@@ -22,10 +23,8 @@ export const runUserQuery = async (req, res) => {
     }
     catch (error) {
         console.error("Query Execution Error:", error);
-        res.status(400).json({
-            error: "Query Execution Failed",
-            details: error.message || "An unknown error occurred during execution"
-        });
+        const mappedError = mapDatabaseError(error);
+        res.status(mappedError.status).json(mappedError);
     }
 };
 export const getSchema = async (req, res) => {
@@ -46,9 +45,11 @@ export const getSchema = async (req, res) => {
     }
     catch (error) {
         console.error("Schema Fetch Error:", error);
-        res.status(500).json({
-            error: "Failed to fetch schema visualizer data",
-            details: error.message
+        const mappedError = mapDatabaseError(error);
+        res.status(mappedError.status).json({
+            error: 'Failed to fetch schema visualizer data',
+            details: mappedError.details,
+            dbCode: mappedError.dbCode
         });
     }
 };

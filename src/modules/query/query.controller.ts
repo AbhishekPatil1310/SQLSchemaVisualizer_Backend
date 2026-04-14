@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth.middleware.js';
 import { executeQuery, getDatabaseSchema } from './query.service.js';
 import { getActiveConnectionForUser } from '../workspace/workspace.service.js';
+import { mapDatabaseError } from '../../core/database-error.js';
 
 /**
  * Executes a raw SQL query provided by the user against their active Aiven DB.
@@ -36,10 +37,8 @@ export const runUserQuery = async (req: AuthRequest, res: Response) => {
     res.json(results);
   } catch (error: any) {
     console.error("Query Execution Error:", error);
-    res.status(400).json({ 
-      error: "Query Execution Failed", 
-      details: error.message || "An unknown error occurred during execution" 
-    });
+    const mappedError = mapDatabaseError(error);
+    res.status(mappedError.status).json(mappedError);
   }
 };
 
@@ -68,9 +67,11 @@ export const getSchema = async (req: AuthRequest, res: Response) => {
     res.json(schemaData);
   } catch (error: any) {
     console.error("Schema Fetch Error:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch schema visualizer data", 
-      details: error.message 
+    const mappedError = mapDatabaseError(error);
+    res.status(mappedError.status).json({
+      error: 'Failed to fetch schema visualizer data',
+      details: mappedError.details,
+      dbCode: mappedError.dbCode
     });
   }
 };
