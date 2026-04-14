@@ -10,8 +10,14 @@ import rateLimit from 'express-rate-limit';
 import aiRoutes from './modules/ai/ai.routes.js';
 const app = express();
 app.use(helmet());
+const DeployOrigin = [
+    'http://localhost:5173',
+    'http://localhost:5173',
+    'https://sql-schema-visualizer-frontend-28ta.vercel.app',
+    'https://sql-schema-visualizer-frontend.vercel.app'
+];
 app.use(cors({
-    origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'https://sql-schema-visualizer-frontend-28ta.vercel.app',
+    origin: env.NODE_ENV === 'development' ? 'http://localhost:5173' : DeployOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true

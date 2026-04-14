@@ -48,7 +48,7 @@ export const switchConnection = async (req, res) => {
         await poolManager.closePool(userId);
         await queryMetadata('UPDATE user_connections SET is_active = false WHERE user_id = $1', [userId]);
         const updateRes = await queryMetadata('UPDATE user_connections SET is_active = true WHERE id = $1 AND user_id = $2 RETURNING id', [connectionId, userId]);
-        if (updateRes.rowCount === 0) {
+        if ((updateRes.rowCount ?? 0) === 0) {
             return res.status(404).json({ error: "Connection not found or access denied" });
         }
         res.json({ message: "Workspace switched successfully." });
@@ -56,6 +56,33 @@ export const switchConnection = async (req, res) => {
     catch (error) {
         console.error("Switch Connection Error:", error);
         res.status(500).json({ error: "Failed to switch workspace", details: error.message });
+    }
+};
+export const deleteConnection = async (req, res) => {
+    try {
+        const { connectionId } = req.params;
+        const userId = req.user?.userId;
+        if (!userId || !connectionId) {
+            return res.status(400).json({ error: "User ID or Connection ID missing" });
+        }
+        const checkRes = await queryMetadata('SELECT is_active FROM user_connections WHERE id = $1 AND user_id = $2', [connectionId, userId]);
+        if ((checkRes.rowCount ?? 0) === 0) {
+            return res.status(404).json({ error: "Connection not found or access denied" });
+        }
+        const wasActive = checkRes.rows[0].is_active;
+        await queryMetadata('DELETE FROM user_connections WHERE id = $1 AND user_id = $2', [connectionId, userId]);
+        if (wasActive) {
+            await poolManager.closePool(userId);
+            const remainingRes = await queryMetadata('SELECT id FROM user_connections WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [userId]);
+            if ((remainingRes.rowCount ?? 0) > 0) {
+                await queryMetadata('UPDATE user_connections SET is_active = true WHERE id = $1', [remainingRes.rows[0].id]);
+            }
+        }
+        res.json({ message: "Connection deleted successfully." });
+    }
+    catch (error) {
+        console.error("Delete Connection Error:", error);
+        res.status(500).json({ error: "Failed to delete connection", details: error.message });
     }
 };
 //# sourceMappingURL=workspace.controller.js.map

@@ -90,7 +90,7 @@ export const switchConnection = async (req: AuthRequest, res: Response) => {
       [connectionId, userId]
     );
 
-    if (updateRes.rowCount === 0) {
+    if ((updateRes.rowCount ?? 0) === 0) {
       return res.status(404).json({ error: "Connection not found or access denied" });
     }
 
@@ -116,7 +116,7 @@ export const deleteConnection = async (req: AuthRequest, res: Response) => {
       [connectionId, userId]
     );
 
-    if (checkRes.rowCount === 0) {
+    if ((checkRes.rowCount ?? 0) === 0) {
       return res.status(404).json({ error: "Connection not found or access denied" });
     }
 
@@ -140,7 +140,7 @@ export const deleteConnection = async (req: AuthRequest, res: Response) => {
       );
 
       // If there are remaining connections, make the most recent one active
-      if (remainingRes.rowCount > 0) {
+      if ((remainingRes.rowCount ?? 0) > 0) {
         await queryMetadata(
           'UPDATE user_connections SET is_active = true WHERE id = $1',
           [remainingRes.rows[0].id]
